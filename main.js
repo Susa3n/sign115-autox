@@ -5,16 +5,53 @@ let swipeConfName = device.getAndroidId() + "_SWIPE_TIME";
 const w = device.width;
 const h = device.height;
 
-const oneOnePassword = "susan520"
-const unlockPhonePassword = "0310"
-const maxSwipeNum = 3
-
+const oneOnePassword = "susan520"; // 115密码
+const unlockPhonePassword = "0310"; // 解锁屏密码
+const maxSwipeNum = 3;
+const BASE_URL = "http://192.168.4.168:9009/"; // 钉钉机器人服务地址
 
 // 退出脚本
 function exitScript() {
   exit();
 }
+// 获取当前时间，默认格式: 2021/09/18 14:00:00
+// rule:
+// 1: 格式: 2021/09/18
+// 2: 格式: 2021-09-18
+function getDateTime(rule) {
+  let date = new Date();
+  let year = date.getFullYear();
+  let month = date.getMonth() + 1;
+  let day = date.getDate();
+  let hour = date.getHours();
+  let minute = date.getMinutes();
+  let second = date.getSeconds();
 
+  if (month < 10) {
+    month = "0" + month;
+  }
+  if (day < 10) {
+    day = "0" + day;
+  }
+  if (hour < 10) {
+    hour = "0" + hour;
+  }
+  if (minute < 10) {
+    minute = "0" + minute
+  }
+  if (second < 10) {
+    second = "0" + second;
+  }
+
+  switch (rule) {
+    case 1:
+      return year + "/" + month + "/" + day
+    case 2:
+      return year + "-" + month + "-" + day
+    default:
+      return "susa3n  " + year + "/" + month + "/" + day + " " + hour + ":" + minute + ":" + second;
+  }
+}
 
 // // 监听退出脚本函数
 function onExit() {
@@ -175,20 +212,21 @@ function execByPage(page) {
       click(w * 0.5, h * 0.6);
       break
     case "signFinish": // 签到完成 退出115
+      postDDNotify(getDateTime() + " 签到完成！")
       quitLastApp("115")
       break
     case "reSign": // 已签到 退出115
+      postDDNotify(getDateTime() + " 签到完成！")
       quitLastApp("115")
       break
     default:
+      postDDNotify(getDateTime() + " 页面识别失败，尝试重新打开软件");
       toastLog("界面识别失败，尝试重新打开钉钉");
   }
   if (page == "signFinish" || page == "reSign") {
     return
   } else {
-    let pageName = loopWaitingForPage()
-    console.info("pageName：", pageName)
-    execByPage(pageName)
+    execByPage(loopWaitingForPage())
   }
 }
 
@@ -206,9 +244,7 @@ function openOneOneFiveSoftware() {
   sleep(3000)
   waitForPackage("com.ylmf.androidclient") // 等待程序打开界面继续执行
   // 2. 判断当前页面
-  let pageName = loopWaitingForPage()
-  console.info("pageName：", pageName)
-  execByPage(pageName)
+  execByPage(loopWaitingForPage())
 }
 
 
@@ -219,9 +255,7 @@ function loopWaitingForPage() {
   var content = "";
   for (let index = 0; index < 10; index++) {
     sleep(delayTime += index * 20);
-    console.log("等待识别屏幕中：", index, delayTime);
     content = captureScreenReText()
-    console.info("content", content);
     if (text("更新版本").exists() || desc("更新版本").exists()) {
       return "update";
     } else if (content.includes("签到成功")) {
@@ -236,7 +270,6 @@ function loopWaitingForPage() {
       } else if (content.includes("编辑")) {
         return "profile"
       } else {
-        //         发送钉钉通知消息
         return "home"
       }
     } else if (content.includes("明天再来吧")) {
@@ -247,59 +280,20 @@ function loopWaitingForPage() {
       return "sign"
     } else {
       //         发送钉钉通知消息
-      log("未识别")
+      log("未识别到页面...")
+      sendNotifyAndExitScript("未识别到页面...");
     }
   }
-  killApp("115");
   toastLog("页面卡死，尝试重新打开应用");
   tryToRestart();
 }
+
 // 尝试重开
 function tryToRestart() {
   openOneOneFiveSoftware();
   exitScript();
 }
 
-
-// 杀掉应用
-function killApp(name) {
-  var packageName = app.getPackageName(name);
-  console.info(packageName)
-  var setting = app.openAppSetting(packageName);
-  console.info("setting:", setting)
-  sleep(1000);
-  while (true) {
-    if (text("结束运行").exists()) {
-      click("结束运行");
-      sleep(500);
-      while (true) {
-        if (text("确定").exists()) {
-          click("确定");
-          sleep(500)
-          break;
-        }
-      }
-      break;
-    } else if (text("强行停止").exists()) {
-      click("强行停止");
-      sleep(500);
-      while (true) {
-        if (text("确定").exists()) {
-          click("确定");
-          sleep(500)
-          break;
-        }
-      }
-      break;
-    } else {
-      setInterval(function () {
-        log("打开设置失败...")
-      }, 2000)
-    }
-  }
-  back(); // 返回上一个界面
-  home(); // 返回首页
-}
 
 // 检查权限
 function CheckPermissions() {
@@ -335,6 +329,7 @@ function CheckPermissions() {
   //   3. 请求录屏权限
   if (!requestScreenCapture()) {
     console.warn("未确认录屏权限")
+    postDDNotify("未确认录屏权限，请确认权限后再次运行脚本!")
   } else {
     console.info("确认录屏权限")
   }
@@ -393,9 +388,38 @@ function checkAppRunning(name) {
   return false
 }
 
+function testHttp() {
+  var r = http.get("www.baidu.com");
+  log("code = " + r.statusCode);
+  log("html = " + r.body.string());
+}
+
+function requestInstance(config, callback) {
+  let url = BASE_URL
+  if (config.url != undefined) {
+    url += config.url
+  }
+  log(url)
+  return http.request(url, {
+    method: config.method,
+    contentType: config.contentType ? config.contentType : "application/json",
+    data: config.body
+  }, callback)
+}
+
+
+// 钉钉发送通知消息
+function postDDNotify(msg) {
+  var url = BASE_URL + "115sign/dd/notify";
+  r = http.postJson(url, {
+    msg: msg
+  });
+  return JSON.parse(r.body.string())
+}
 // 程序入口
 (function () {
   onExit()
+
   // 1. 解锁屏幕
   unlockScreen();
   //  2. 检查权限

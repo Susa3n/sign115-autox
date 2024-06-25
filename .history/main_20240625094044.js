@@ -19,7 +19,9 @@ function exitScript() {
 // // 监听退出脚本函数
 function onExit() {
   events.on('exit', function () {
+    sleep(1000);
     //    1. 发送钉钉消息
+    home();
     log('结束脚本运行');
   });
 }
@@ -58,6 +60,23 @@ function swipeUpOperation() {
   return false;
 }
 
+// 划屏进入控制台中心,移除第一个应用，返回首页
+function swipeUpControlCenter() {
+  let swipeTime = 500;
+  let addTime = 20;
+  for (let i = 0; i < maxSwipeNum; i++) {
+    swipeTime += addTime;
+    console.info(swipeTime, h * 0.99)
+    // 滑屏操作
+    gesture(swipeTime, [w / 2, h * 0.99], [w / 2, h * 0.87]);
+    sleep(1000);
+    // if (judgeSwipeUpResults()) {
+    //   OneOneFiveConf.put(swipeConfName, swipeTime);
+    //   return true;
+    // }
+  }
+  return false;
+}
 
 // 判断向上滑动结果
 function judgeSwipeUpResults() {
@@ -413,11 +432,8 @@ function checkAppRunning(name) {
       }
     }
   } else {
-    sleep(1000);
-    home();
     // 锁屏
     lockScreen()
-    sleep(1000);
   }
   // 6. 结束程序
   exitScript();

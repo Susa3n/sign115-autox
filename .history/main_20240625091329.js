@@ -58,6 +58,23 @@ function swipeUpOperation() {
   return false;
 }
 
+// 划屏进入控制台中心,移除第一个应用，返回首页
+function swipeUpControlCenter() {
+  let swipeTime = 500;
+  let addTime = 20;
+  for (let i = 0; i < maxSwipeNum; i++) {
+    swipeTime += addTime;
+    console.info(swipeTime, h * 0.99)
+    // 滑屏操作
+    gesture(swipeTime, [w / 2, h * 0.99], [w / 2, h * 0.87]);
+    sleep(1000);
+    // if (judgeSwipeUpResults()) {
+    //   OneOneFiveConf.put(swipeConfName, swipeTime);
+    //   return true;
+    // }
+  }
+  return false;
+}
 
 // 判断向上滑动结果
 function judgeSwipeUpResults() {
@@ -175,9 +192,11 @@ function execByPage(page) {
       click(w * 0.5, h * 0.6);
       break
     case "signFinish": // 签到完成 退出115
-      quitLastApp("115")
+      // killApp("115")
       break
     case "reSign": // 已签到 退出115
+      // console.info("reSign kill 115")
+      // killApp("115")
       quitLastApp("115")
       break
     default:
@@ -370,8 +389,6 @@ function quitLastApp(name) {
       // 滑屏退出应用操作
       gesture(swipeTime, [w * 0.4, h * 0.65], [w * 0, h * 0.65]);
       sleep(1000)
-      back() // 返回上一页
-      sleep(1000)
       return
     }
   }
@@ -382,12 +399,14 @@ function checkAppRunning(name) {
   if (recents()) {
     sleep(1000)
     if (text(name).exists()) {
-      log("115正在运行");
+      log("111", "115存在");
       back()
       sleep(1000)
+
       return true
     }
-    log("115已退出")
+    sleep(1000)
+
     back()
   }
   return false
@@ -395,29 +414,33 @@ function checkAppRunning(name) {
 
 // 程序入口
 (function () {
-  onExit()
-  // 1. 解锁屏幕
-  unlockScreen();
-  //  2. 检查权限
-  CheckPermissions();
-  // 3. 进入115页面
-  openOneOneFiveSoftware();
 
-  // 5. 检查程序是否运行在后台
+  // console.show()
+
+  onExit()
+
+
+  sleep(3000)
+
+  // 1. 解锁屏幕
+  // unlockScreen();
+  // //  2. 检查权限
+  // CheckPermissions();
+  // // 3. 进入115页面
+  // openOneOneFiveSoftware();
+
+  // // 5. 检查程序是否运行在后台
   if (checkAppRunning("115")) {
     while (true) {
       quitLastApp("115");
-      if (!checkAppRunning("115")) {
-        log("115已退出");
+      if (checkAppRunning("115")) {
+        log("222", "115已退出");
         break;
       }
     }
   } else {
-    sleep(1000);
-    home();
     // 锁屏
-    lockScreen()
-    sleep(1000);
+    // lockScreen()
   }
   // 6. 结束程序
   exitScript();

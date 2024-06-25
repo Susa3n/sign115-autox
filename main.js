@@ -8,7 +8,7 @@ const h = device.height;
 const oneOnePassword = "susan520"; // 115密码
 const unlockPhonePassword = "0310"; // 解锁屏密码
 const maxSwipeNum = 3;
-const BASE_URL = "http://192.168.4.168:9009/"; // 钉钉机器人服务地址
+const BASE_URL = "http://43.143.244.188:9009/"; // 钉钉机器人服务地址
 
 // 退出脚本
 function exitScript() {
@@ -388,18 +388,12 @@ function checkAppRunning(name) {
   return false
 }
 
-function testHttp() {
-  var r = http.get("www.baidu.com");
-  log("code = " + r.statusCode);
-  log("html = " + r.body.string());
-}
 
 function requestInstance(config, callback) {
   let url = BASE_URL
   if (config.url != undefined) {
     url += config.url
   }
-  log(url)
   return http.request(url, {
     method: config.method,
     contentType: config.contentType ? config.contentType : "application/json",
